@@ -8,13 +8,13 @@
   * QT 5.10.0
   
 * Requirements
-  * A minimal understanding of TCP/IP Networking
+  * A basic understanding of TCP/IP Networking
   
-The A.L.I.E.N. Project is a set of two QT/C++ classes which conveniently add TCP/IP or Internet functionality to your app.
+The A.L.I.E.N. Project is a set of two QT/C++ classes which can conveniently add TCP/IP or Internet functionality to your app.
 
-It is meant as an example for those interested in developing their own Network/Internet-based apps. Only the essential
-components of establishing, managing and interacting with Network Sockets are included in A.L.I.E.N. and as such it is a case
-example for developers that only covers the most essential theory for 
+It is primarily meant as an example for those interested in developing their own Network/Internet-based apps. Only the
+essential components of establishing, managing and interacting with network sockets are included in A.L.I.E.N. and as such it
+is a case example for developers that only covers the most essential theory for 
 
 # A.L.I.E.N. Server
 ###### The server-side component
