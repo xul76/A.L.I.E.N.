@@ -7,7 +7,7 @@
   * C++
 
 * Frameworks
-  * [QT 5.10.0](https://download.qt.io/archive/qt/5.10/5.10.0/)(recommended QT 5.x)
+  * [QT 5.10.0](https://download.qt.io/archive/qt/5.10/5.10.0/) (recommended QT 5.x)
   * [Botan 2.0.1](https://botan.randombit.net/)
   
 * Requirements
