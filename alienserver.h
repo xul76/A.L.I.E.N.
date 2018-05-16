@@ -14,7 +14,6 @@
 #include <QByteArray>
 #include <QList>
 #include <QString>
-#include <QStringList>
 #include "alienclient.h"
 
 class alienServer : public QObject
