@@ -11,6 +11,7 @@
 
 #include <QObject>
 #include <QtNetwork>
+#include <QStringList>
 #include <iostream>
 #include <exception>
 #include "alienclient.h"
