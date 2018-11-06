@@ -3,7 +3,7 @@
  *
  *  a little interface (for) easy networking (client component)
  *
- *              https://github.com/xul76/A.L.I.E.N.
+ *              https://github.com/xul76/A.L.I.E.N
  */
 
 #ifndef ALIENCLIENT_H
