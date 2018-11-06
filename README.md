@@ -1,7 +1,9 @@
 # A.L.I.E.N
 ###### A Little Interface (for) Easy Networking
 
-##### The A.L.I.E.N. Client/Server classes demonstrate how to implement basic TCP/IP Networking (Internet) functionality in C++ apps built using the QT Framework. The Botan cryptographic library is also included, leaving everything except for the essential networking code, up to the developer.
+##### The A.L.I.E.N. Client and Server classes demonstrate how to implement TCP/IP Networking (Internet) functionality in C++ apps built using the QT Framework. It serves as a learning tool for new C++ and/or QT developers to learn how networking functionality is implemented manually, but also as a ready-to-use set of classes that you can use right away from QT.
+
+
 
 * Programming Language(s)
   * C++
