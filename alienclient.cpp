@@ -169,5 +169,4 @@ void alienClient::onClientDataReceived()
     QByteArray buf = clientSocket->readAll();
 
     emit sigDataReceived(socketID, socketGUID, QString::fromUtf8(buf));
-
 }
