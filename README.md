@@ -12,7 +12,7 @@ The Botan cryptographic library is also included, leaving everything except for 
 
 * Frameworks
   * [QT 4.x or 5.x](https://download.qt.io/archive/qt/5.9/5.9.7/) (recommended QT 5.9.7)
-  * [Botan 2.0.1](https://botan.randombit.net/)
+  * [Botan 2.0.1](https://botan.randombit.net/) (or newer)
   
 * Requirements
   * A basic understanding of TCP/IP
