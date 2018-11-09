@@ -16,7 +16,7 @@ The Botan cryptographic library is also included, leaving everything except for 
   
 * Requirements
   * A basic understanding of TCP/IP
-  * The Botan 2.0.1 library compiled (instructions)
+  * The Botan 2.0.1 library compiled ([instructions](https://gist.github.com/xul76))
 
 * Supported Systems
   * Windows
