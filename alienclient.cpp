@@ -2,104 +2,66 @@
 
 alienClient::alienClient(QObject *parent) : QObject(parent)
 {
-    // We don't use this constructor for one reason:
-    //
-    // In case a client connects to us, we'll already have an initialised socket when we don't need it.
-    //
-    // This means redundancy comes into play. Manual initialisation through the two init() functions is
-    // a better option, because it allows devs to play into two different scenarios:
-    //
-    //    - when a.l.i.e.n. clients are used independently
-    //    - when a.l.i.e.n. clients are used by a.l.i.e.n. servers
+
 }
+
 
 void alienClient::init()
 {
+    // set basic vars
     socketID = "";
     socketGUID = "";
 
-    linkStatus = 0;
+    socketMode = 0;
 
-    // create new [client] socket
+    // create new client socket
     clientSocket = new QTcpSocket();
 
-    // generate and set sguid for this a.l.i.e.n. client
+    // generate a socket-globally unique id (sguid) for this socket
+    // ... 1 socket == 1 TCP or UDP connection
+    // ... we use TCP in ALIEN
+    //     ... for stability (sequential packet delivery)
     generateSGUID();
 
-    // connect socket::connected() signal to onClientConnected() function
-    connect(clientSocket,
-            SIGNAL(connected()),
-            this,
-            SLOT(onClientConnected())
-            );
-    
-    // connect socket::disconnected() signal to onClientDisconnected() function
-    connect(clientSocket,
-            SIGNAL(disconnected()),
-            this,
-            SLOT(onClientDisconnected())
-            );
-    
-    // connect socket::readyRead() signal to onClientDataReceived() function
-    connect(clientSocket,
-            SIGNAL(readyRead()),
-            this,
-            SLOT(onClientDataReceived())
-            );
+    connect(clientSocket, SIGNAL(connected()), this, SLOT(onClientConnected()));
+    connect(clientSocket, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
+    connect(clientSocket, SIGNAL(readyRead()), this, SLOT(onClientDataReceived()));
 }
 
 void alienClient::init(QTcpSocket *qsock)
 {
+    // initialize with an already-connected QTcpSocket from an ALIEN Server
     clientSocket = qsock;
 
     socketID = "";
     socketID = clientSocket->peerAddress().toString();
 
-    linkStatus = 0;
+    socketMode = 0;
 
-    // generate and set sguid for this a.l.i.e.n. client
     generateSGUID();
-    
-    // connect socket::connected() signal to onClientConnected() function
-    connect(clientSocket,
-            SIGNAL(connected()),
-            this,
-            SLOT(onClientConnected())
-            );
-    
-    // connect socket::disconnected() signal to onClientDisconnected() function
-    connect(clientSocket,
-            SIGNAL(disconnected()),
-            this,
-            SLOT(onClientDisconnected())
-            );
-    
-    // connect socket::readyRead() signal to onClientDataReceived() function
-    connect(clientSocket,
-            SIGNAL(readyRead()),
-            this,
-            SLOT(onClientDataReceived())
-            );
+
+    connect(clientSocket, SIGNAL(connected()), this, SLOT(onClientConnected()));
+    connect(clientSocket, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
+    connect(clientSocket, SIGNAL(readyRead()), this, SLOT(onClientDataReceived()));
 }
+
 
 void alienClient::generateSGUID()
 {
     socketGUID = "";
 
-    // create 256-byte buffer for random input
+    // create 256-byte buffer
     Botan::secure_vector<Botan::byte> rmsg(256);
 
-    // use a botan random number generator (RNG) to provide the input
+    // use da botan random number generator (RNG) ta provide da input mon
     Botan::AutoSeeded_RNG rng;
 
     // generate random message in <rmsg>
     rng.randomize(&rmsg[0], rmsg.size());
 
     // # hashPipe:
-    //   generates a hash product with input message <rmsg> using the TIGER hash algo.
-    //   these hashpipes are convinience methods for generating hashes. there are better ways.
-    Botan::Pipe hashPipe(new Botan::Hash_Filter("Tiger"), new Botan::Hex_Encoder);
-    
+    //   generates a hash product with input message <rmsg> using the Whirlpool hash algo
+    Botan::Pipe hashPipe(new Botan::Hash_Filter("Whirlpool"), new Botan::Hex_Encoder);
     hashPipe.start_msg();
     hashPipe.write(rmsg);
     hashPipe.end_msg();
@@ -108,30 +70,33 @@ void alienClient::generateSGUID()
     socketGUID = QString::fromStdString(hashPipe.read_all_as_string());
 }
 
-void alienClient::connectToDevice(QString deviceIP, int openPort)
+
+void alienClient::setSocketMode(int n_Mode)
+{
+    socketMode = n_Mode;
+}
+
+
+void alienClient::connectToDevice(QString deviceIP, quint16 openPort)
 {
     socketID = clientSocket->peerAddress().toString();
 
     clientSocket->connectToHost(deviceIP, openPort);
 }
 
-void alienClient::shutdown()
-{
-    if(linkStatus == 1)
-    {
-        clientSocket->disconnectFromHost();
-    }
-}
 
 void alienClient::zeroProtocol()
 {
+    socketID = "";
+    socketGUID = "";
+
     delete clientSocket;
 }
+
 
 void alienClient::sendData(QString payload)
 {
     QByteArray buf = payload.toUtf8();
-    
     clientSocket->write(buf);
     clientSocket->flush();
 }
@@ -142,15 +107,24 @@ void alienClient::sendData(QByteArray _buf)
     clientSocket->flush();
 }
 
+
 void alienClient::onClientConnected()
 {
-    // 0 = enable nagle | 1 = disable nagle
+    // # lowDelayOption
+    // 0 = enable | 1 = disable
+    // Enables or disables the NAGLE alorithm
+    //    ... NAGLE optimizes packet delivery by reducing latency
+    //    ... useful for whatever the fuck; i have no idea what suffering this is supposed to eleviate, but whatever
+    //    ... i keeps this bitch disabled
     clientSocket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
 
-    clientSocket->setSocketOption(QAbstractSocket::SendBufferSizeSocketOption, 131068);
-    clientSocket->setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, 131068);
+    // # SendBufferSizeSocketOption
+    // Sets the size of outgoing packets [from this device]
+    clientSocket->setSocketOption(QAbstractSocket::SendBufferSizeSocketOption, 32767);
 
-    linkStatus = 1;
+    // # ReceiveBufferSizeSocketOption
+    // Sets the size of incoming packets [to this device]
+    clientSocket->setSocketOption(QAbstractSocket::ReceiveBufferSizeSocketOption, 32767);
 
     socketID = clientSocket->peerAddress().toString();
 
@@ -159,8 +133,6 @@ void alienClient::onClientConnected()
 
 void alienClient::onClientDisconnected()
 {
-    linkStatus = 0;
-
     emit sigDisconnected(socketID, socketGUID);
 }
 
