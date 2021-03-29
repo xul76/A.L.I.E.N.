@@ -1,9 +1,11 @@
 /*
- *                       A.L.I.E.N. Client
+ *               A.L.I.E.N Client
  *
- *  a little interface (for) easy networking (client component)
+ *  A Little Interface (for) Easy Networking
  *
- *              https://github.com/xul76/A.L.I.E.N
+ *              (client component)
+ *
+ *     https://github.com/xul76/A.L.I.E.N
  */
 
 #ifndef ALIENCLIENT_H
@@ -13,6 +15,7 @@
 #include <QtNetwork>
 #include <QFile>
 #include <QDir>
+#include <QElapsedTimer>
 
 #include "botan/pipe.h"
 #include "botan/hex.h"
@@ -38,80 +41,75 @@ class alienClient : public QObject
 {
     Q_OBJECT
 public:
-    explicit alienClient(QObject *parent = nullptr);
+    explicit alienClient(QObject *parent = 0);
 
-    // # clientSocket:
-    //   client socket used to establish a connection to another app or device and to exchange data with each other.
     QTcpSocket *clientSocket;
 
     // # socketID:
-    //   a.l.i.e.n. client: IP4 Address of the server (endpoint)
-    //   a.l.i.e.n. server: IP4 Address of a client (source)
+    //   IP4 Address of the other dude (endpoint)
     QString socketID;
 
     // # socketGUID:
-    //   used for NAT purposes. (see docs)
+    //   Assign each socket you create a unique id, so that incoming/outgoing communications with that endpoint are
+    //   easy to handle. (see dox)
     QString socketGUID;
 
-    bool linkStatus;
+    // # socketMode
+    //   0 = Text Mode
+    //       ... in Text Mode the client sends + receives commands to/from the server
+    //   1 = Binary Mode
+    //       ... in Binary Mode the socket is receiving a file, and is therefore not processing [server] commands
+    int socketMode;
+
+    // # bytesReceived
+    //   Tracks received bytes from endpoint [during file transfer]
+    int bytesReceived;
+
+    // # totalBytes
+    //   Total file size (in bytes) of incoming file
+    long totalBytes;
+
+    // # outputFile
+    //   Target file on disk for storing the incoming file
+    QString outputFile;
+
+    // # outputFile
+    //   File name of [future] target file on disk
+    QString outputFileName;
+
+    // # inputFile
+    //   Target file on disk that's to be uploaded next
+    QString inputFile;
+
+    // # writer
+    //   File handler for incoming file transfers
+    QFile writer;
 
 signals:
-    // # sigClientConnected:
-    //   emitted by this class when it successfully connects to an endpoint.
     void sigConnected(QString sid, QString sguid);
-
-    // # sigClientDisconnected:
-    //   emitted by this class when it disconnects (or is disconnected) from the endpoint.
     void sigDisconnected(QString sid, QString sguid);
-
-    // # sigClientDataReceived:
-    //   emitted by this class when the endpoint sends [a block of] data to cS/your app.
     void sigDataReceived(QString sid, QString sguid, QString payload);
 
-    void sigBlockReceived(QString sid, QString sguid, int _received);
-
-    void sigDownloadComplete(QString sid, QString sguid, QString _fname, QString _from, QString _tg);
-
 public slots:
-    // # init:
-    //   !! must be called right after manually creating a new alienClient object. !!
     void init();
-
-    // # init (overloaded):
-    //   !! used by an alienServer object only. should never be manually called by devs. !!
     void init(QTcpSocket *qsock);
 
-    // # generateGUID:
-    //   generate a new sguid (Socket Globally-Unique IDentifier). (see docs)
     void generateSGUID();
 
-    // # connectToServer:
-    //   connect to app/device at ip: <deviceIP> on port: <openPort>
-    void connectToDevice(QString deviceIP, int openPort);
+    void setSocketMode(int n_Mode);
 
-    // # shutdown:
-    //   closes the active connection.
-    void shutdown();
+    void connectToDevice(QString deviceIP, quint16 openPort);
 
-    // # zeroProtocol:
-    //   destroy everything (clean up).
     void zeroProtocol();
 
-    // # sendData:
-    //   send <payload> to the endpoint.
     void sendData(QString payload);
-
     void sendData(QByteArray _buf);
 
 private slots:
-    // obvious
     void onClientConnected();
-
-    // obvious
     void onClientDisconnected();
-
-    // obvious
     void onClientDataReceived();
+
 };
 
 #endif // ALIENCLIENT_H
