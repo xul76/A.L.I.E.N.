@@ -2,10 +2,8 @@
 
 alienServer::alienServer(QObject *parent) : QObject(parent)
 {
-    // initialise our server socket with this class as it's parent.
     serverSocket = new QTcpServer(this);
-    
-    // connect socket::newConnection() signal to serverConnected() function.
+
     connect(serverSocket,
             SIGNAL(newConnection()),
             this,
@@ -13,59 +11,66 @@ alienServer::alienServer(QObject *parent) : QObject(parent)
             );
 }
 
-bool alienServer::startServer(QHostAddress address, int localPort)
+
+bool alienServer::startServer(QHostAddress address, quint16 localPort)
 {
-    // # opRes:
-    //   true:  socket is now successfully listening on port <localPort>.
-    //   false: socket could not be started on <interface/port>.
     bool opres = false;
-    
+
     opres = serverSocket->listen(address, localPort);
-    
+
     if(opres == true)
     {
         adapterIP = address.toString();
     }
-    
+
     return opres;
 }
 
 void alienServer::stopServer()
 {
-    // close server socket (and drop all existing connections)
+    // shutdown our server socket
+    //    ... also prevents further connection attempts to this socket
     serverSocket->close();
-    
-    // loop through C
+
+    // loop through controller
     for(int i = 0; i < controller.count(); i++)
     {
-        controller.at(i)->shutdown();
-        
-        disconnect(controller.at(i)->clientSocket,
-                   SIGNAL(sigClientDisconnected(QString, QString)),
-                   this,
-                   SLOT(serverDisconnected(QString, QString))
-                   );
-        
-        disconnect(controller.at(i)->clientSocket,
-                   SIGNAL(sigClientDataReceived(QString, QString, QString)),
-                   this,
-                   SLOT(serverDataReceived(QString, QString, QString))
-                   );
-        
-        controller.at(i)->zeroProtocol();
+        try {
+            // call the disconnectFromHost function on each ALIEN client
+            //    ... do i really need to fucking explain what the fuck that does ?
+            controller.at(i)->clientSocket->disconnectFromHost();
+
+            // disconnect signal handlers
+            disconnect(controller.at(i)->clientSocket,
+                       SIGNAL(sigClientDisconnected(QString, QString)),
+                       this,
+                       SLOT(serverDisconnected(QString, QString))
+                       );
+
+            disconnect(controller.at(i)->clientSocket,
+                       SIGNAL(sigClientDataReceived(QString, QString, QString)),
+                       this,
+                       SLOT(serverDataReceived(QString, QString, QString))
+                       );
+
+            controller.at(i)->zeroProtocol();
+        }
+        catch (std::exception& e){
+            emit sigServerError(e.what());
+        }
     }
-    
-    qDeleteAll(controller.begin(), controller.end());
-    
+
+    // reset master controller entries
     controller.clear();
 }
+
 
 QStringList alienServer::getNetworkInterfaces()
 {
     QStringList faces;
-    
+
     QList<QNetworkInterface> interfaces =  QNetworkInterface::allInterfaces();
-    
+
     for(int a = 0; a < interfaces.count(); ++a)
     {
         foreach (QNetworkAddressEntry e, interfaces.at(a).addressEntries())
@@ -73,80 +78,84 @@ QStringList alienServer::getNetworkInterfaces()
             faces.append(( interfaces.at(a).name() + ": " + e.ip().toString() ));
         }
     }
-    
+
     return faces;
 }
+
 
 void alienServer::zeroProtocol()
 {
     for(int a = 0; a < controller.size(); ++a)
     {
-        controller.at(a)->shutdown();
+        controller.at(a)->clientSocket->disconnectFromHost();
         controller.at(a)->zeroProtocol();
     }
-    
-    qDeleteAll(controller.begin(), controller.end());
 
     controller.clear();
-    
+
     disconnect(serverSocket,
                SIGNAL(newConnection()),
                this,
                SLOT(serverConnected())
                );
-    
+
     delete serverSocket;
 }
 
+
 void alienServer::sendData(QString sid, QString sguid, QString payload)
 {
-    foreach(alienClient *entry, controller)
+    // loop through controller
+    for (int i = 0; i < controller.count(); i++)
     {
-        if (entry->socketID == sid && entry->socketGUID == sguid)
+        // find ALIEN client by socketID + socketGUID
+        if (controller.at(i)->socketID == sid && controller.at(i)->socketGUID == sguid)
         {
-            // convert <payload> to UTF-8 encoded byte array
+            // convert <payload> to UTF-8 encoded byte array as <buf>
             QByteArray buf = payload.toUtf8();
-
+            
             // send <buf> to endpoint
-            entry->clientSocket->write(buf);
-
-            return;
+            controller.at(i)->clientSocket->write(buf);
         }
     }
 }
 
-// # server socket : connection established
+
 void alienServer::serverConnected()
 {
+    // create new ALIEN client on new connection attempt
+    //    ... all communications to and from this endpoint goes through this object
     alienClient *nsock = new alienClient(this);
-    
+
+    // new ALIEN client parent must call init() function
+    //    ... init() sets up basic vars for the socket
     nsock->init(serverSocket->nextPendingConnection());
-    
+
     connect(nsock,
             SIGNAL(sigDisconnected(QString, QString)),
             this,
             SLOT(serverDisconnected(QString, QString))
             );
-    
+
     connect(nsock,
             SIGNAL(sigDataReceived(QString, QString, QString)),
             this,
             SLOT(serverDataReceived(QString, QString, QString))
             );
 
-    // add client socket to <controller> for management purposes
+    // add new ALIEN client to controller
     controller.append(nsock);
-    
+
     emit sigClientConnected(nsock->socketID, nsock->socketGUID);
 }
 
-// # server socket : connection lost
 void alienServer::serverDisconnected(QString sid, QString sguid)
 {
     QList<int> toRemove;
-    
+
     for(int i = 0; i < controller.count(); i++)
     {
+        // find ALIEN client tied to this end point by socketID and socketGUID
         if(controller[i]->socketID == sid && controller[i]->socketGUID == sguid)
         {
             toRemove.append(i);
@@ -157,31 +166,12 @@ void alienServer::serverDisconnected(QString sid, QString sguid)
     {
         delete controller[toRemove.at(j)];
         controller.removeAt(toRemove.at(j));
+
         emit sigClientDisconnected(sid, sguid);
     }
 }
 
-// # server socket : data received
 void alienServer::serverDataReceived(QString sid, QString sguid, QString payload)
 {
     emit sigClientDataReceived(sid, sguid, payload);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
