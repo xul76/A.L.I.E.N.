@@ -1,22 +1,20 @@
 # A.L.I.E.N
 ###### A Little Interface (for) Easy Networking
 
-The A.L.I.E.N. Client and Server classes demonstrate how to implement TCP/IP Networking (Internet) functionality in C++ apps built using the QT Framework.
+The A.L.I.E.N. Client and Server classes are wrappers for building an Internet-based program in C++ with the QT Framework.
 
-It serves as a learning tool for new C++ and/or QT developers to learn how networking functionality is implemented manually, but also as a ready-to-use set of classes that you can use right away from QT.
-
-The Botan cryptographic library is also included, leaving everything except for the essential networking code up to you, the developer.
+A.L.I.E.N uses the [Botan](https://botan.randombit.net/) cryptographic library. See my gists [here](https://gist.github.com/xul76) on how to compile and use Botan in your QT project.
 
 * Programming Language(s)
   * C++
 
 * Frameworks
-  * [QT 4.x or 5.x](https://download.qt.io/archive/qt/5.9/5.9.7/) (recommended QT 5.9.7)
-  * [Botan 2.0.1](https://botan.randombit.net/) (or newer)
+  * [QT 5.x](https://download.qt.io/archive/qt/) (recommended QT 5.13.1)
+  * [Botan 2.8.0](https://botan.randombit.net/) (or newer)
   
 * Requirements
   * A basic understanding of TCP/IP
-  * The Botan 2.0.1 library compiled ([instructions](https://gist.github.com/xul76))
+  * The Botan library compiled ([instructions](https://gist.github.com/xul76))
 
 * Supported Systems
   * Windows
